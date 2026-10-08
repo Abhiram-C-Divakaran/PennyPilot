@@ -4,6 +4,10 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import transactionsRouter from "./server/routes/transactions";
+import categoriesRouter from "./server/routes/categories";
+import analyticsRouter from "./server/routes/analytics";
+import { defaultSeedData, defaultCategories, defaultTransactions } from "./server/db/seed";
 
 dotenv.config();
 
@@ -16,310 +20,8 @@ if (!fs.existsSync(path.join(process.cwd(), "data"))) {
   fs.mkdirSync(path.join(process.cwd(), "data"), { recursive: true });
 }
 
-// Default state containing all Phase 2 features
-const defaultData = {
-  profile: {
-    name: "Abhiram",
-    email: "abhiramcd27@gmail.com",
-    phone: "+91 98765 43210",
-    currency: "₹",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60",
-    saveCoins: 1250,
-    level: 3,
-    xp: 620,
-    streak: 5,
-    lastCheckIn: "2026-07-18", // Checked in yesterday relative to Sunday, July 19, 2026
-    badges: ["first_saver", "discipline_master"],
-    isPremium: false,
-    subscriptionPlan: "none",
-    monthlyIncome: 30000,
-    saverScore: 87,
-    saverScoreFactors: {
-      consistency: 5,
-      discipline: 4,
-      goalCompletion: 5
-    },
-    trustLevel: "trusted" as const,
-    cooldownRewards: [
-      {
-        id: "cool-1",
-        name: "Goal Completion Milestone: iPhone 17 Pro",
-        coins: 1000,
-        unlockedAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        status: "pending" as const,
-        goalId: "goal-4",
-        goalName: "iPhone 17 Pro"
-      }
-    ]
-  },
-  goals: [
-    {
-      id: "goal-1",
-      name: "Rolex Submariner Watch",
-      targetAmount: 450000,
-      currentSavings: 337500,
-      targetDate: "2026-10-31",
-      category: "Shopping",
-      imageUrl: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=500&auto=format&fit=crop&q=60",
-      status: "active",
-      createdAt: "2026-05-10T08:00:00.000Z",
-      autoSaveAmount: 5000,
-      autoSaveFrequency: "weekly",
-      autoSaveNextDate: "2026-07-22T12:00:00.000Z",
-      priority: "high",
-      milestonesRewarded: [25, 50, 75]
-    },
-    {
-      id: "goal-2",
-      name: "Vacation to Tokyo, Japan",
-      targetAmount: 180000,
-      currentSavings: 144000,
-      targetDate: "2026-09-15",
-      category: "Travel",
-      imageUrl: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=500&auto=format&fit=crop&q=60",
-      status: "active",
-      createdAt: "2026-06-01T10:00:00.000Z",
-      autoSaveAmount: 4000,
-      autoSaveFrequency: "weekly",
-      autoSaveNextDate: "2026-07-20T12:00:00.000Z",
-      priority: "medium",
-      milestonesRewarded: [25, 50, 75]
-    },
-    {
-      id: "goal-3",
-      name: "Stanford Leadership Program",
-      targetAmount: 600000,
-      currentSavings: 150000,
-      targetDate: "2027-01-20",
-      category: "Education",
-      imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=500&auto=format&fit=crop&q=60",
-      status: "active",
-      createdAt: "2026-06-15T14:30:00.000Z",
-      autoSaveAmount: 25000,
-      autoSaveFrequency: "monthly",
-      autoSaveNextDate: "2026-08-15T12:00:00.000Z",
-      priority: "high",
-      milestonesRewarded: [25]
-    },
-    {
-      id: "goal-4",
-      name: "iPhone 17 Pro",
-      targetAmount: 130000,
-      currentSavings: 130000,
-      targetDate: "2026-07-10",
-      category: "Shopping",
-      imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=60",
-      status: "completed",
-      createdAt: "2026-06-20T09:00:00.000Z",
-      autoSaveAmount: 0,
-      autoSaveFrequency: "none",
-      priority: "medium",
-      milestonesRewarded: [25, 50, 75, 100]
-    }
-  ],
-  wallet: {
-    balance: 42500,
-    transactions: [
-      {
-        id: "tx-1",
-        type: "deposit",
-        amount: 50000,
-        date: "2026-07-15T10:00:00.000Z",
-        description: "Funds deposited from primary bank account"
-      },
-      {
-        id: "tx-2",
-        type: "auto_save",
-        amount: 5000,
-        goalId: "goal-1",
-        goalName: "Rolex Submariner Watch",
-        date: "2026-07-15T12:00:00.000Z",
-        description: "Weekly auto-save for Rolex Submariner Watch"
-      },
-      {
-        id: "tx-3",
-        type: "auto_save",
-        amount: 4000,
-        goalId: "goal-2",
-        goalName: "Vacation to Tokyo, Japan",
-        date: "2026-07-13T12:00:00.000Z",
-        description: "Weekly auto-save for Vacation to Tokyo, Japan"
-      }
-    ]
-  },
-  notifications: [
-    {
-      id: "notif-1",
-      text: "Congratulations! You reached 100% of your target for 'iPhone 17 Pro' 🎉",
-      type: "success",
-      date: "2026-07-10T15:00:00.000Z",
-      read: true
-    },
-    {
-      id: "notif-2",
-      text: "You are ₹36,000 away from your Tokyo, Japan travel goal! Highly achievable by next month.",
-      type: "milestone",
-      date: "2026-07-18T18:00:00.000Z",
-      read: false
-    }
-  ],
-  chatHistory: [
-    {
-      id: "msg-1",
-      sender: "coach",
-      text: "Hello Abhiram! I am your GoalSave AI Financial Coach. I've analyzed your goals and see you are saving ₹9,000/week across your active projects! You're making exceptional progress on 'Trip to Tokyo' (80% saved) and 'Buy Rolex Submariner' (75% saved). How can I help you optimize your savings today?",
-      timestamp: "2026-07-19T09:00:00.000Z"
-    }
-  ],
-  challenges: [
-    {
-      id: "chall-1",
-      name: "30-Day Saving Challenge",
-      description: "Save minimum ₹100/day to build compound disciplines",
-      targetDaily: 100,
-      daysTracked: 15,
-      rewardCoins: 500,
-      joined: true,
-      completed: false
-    },
-    {
-      id: "chall-2",
-      name: "No-Spend Weekend",
-      description: "Avoid any non-essential luxury expenses this Saturday & Sunday",
-      targetDaily: 0,
-      daysTracked: 1,
-      rewardCoins: 200,
-      joined: true,
-      completed: false
-    },
-    {
-      id: "chall-3",
-      name: "Emergency Fund Kickstart",
-      description: "Start an Emergency Fund goal and deposit first ₹5,000",
-      targetDaily: 5000,
-      daysTracked: 0,
-      rewardCoins: 300,
-      joined: false,
-      completed: false
-    }
-  ],
-  rewards: [
-    {
-      id: "reward-1",
-      name: "Amazon ₹100 Gift Voucher",
-      category: "Digital",
-      cost: 1000,
-      imageUrl: "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=150&auto=format&fit=crop&q=60",
-      description: "Instant ₹100 shopping credit for Amazon India orders.",
-      partnerName: "Amazon",
-      redeemedCount: 3
-    },
-    {
-      id: "reward-2",
-      name: "Starbucks Tall Cappuccino",
-      category: "Food & Beverage",
-      cost: 800,
-      imageUrl: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=60",
-      description: "Enjoy a freshly brewed hot Cappuccino coffee coupon.",
-      partnerName: "Starbucks",
-      redeemedCount: 1
-    },
-    {
-      id: "reward-3",
-      name: "Spotify Premium 1 Month",
-      category: "Entertainment",
-      cost: 1500,
-      imageUrl: "https://images.unsplash.com/photo-1614680376593-902f74fa0d41?w=150&auto=format&fit=crop&q=60",
-      description: "Ad-free offline streaming on mobile, desktop, and smart TVs.",
-      partnerName: "Spotify",
-      redeemedCount: 0
-    },
-    {
-      id: "reward-4",
-      name: "Swiggy ₹150 Meal Voucher",
-      category: "Digital",
-      cost: 1200,
-      imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=150&auto=format&fit=crop&q=60",
-      description: "Get flat ₹150 off on food delivery from your favorite outlets.",
-      partnerName: "Swiggy",
-      redeemedCount: 2
-    }
-  ],
-  partnerDeals: [
-    {
-      id: "partner-1",
-      name: "Dell laptop completed accessory 10% Off",
-      triggerCategory: "Education",
-      couponCode: "DELLGOALSAVE10",
-      description: "You completed your laptop goal! Get 10% off laptop stands, sleeves, and monitors.",
-      clicks: 12,
-      redemptions: 4,
-      logoUrl: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=150&auto=format&fit=crop&q=60"
-    },
-    {
-      id: "partner-2",
-      name: "Decathlon Mountain Cycle Deal - 15% Off",
-      triggerCategory: "Other",
-      couponCode: "DECARIDER15",
-      description: "Congrats on your cycling savings! Unlock an exclusive 15% discount code for bicycle accessories.",
-      clicks: 8,
-      redemptions: 2,
-      logoUrl: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=150&auto=format&fit=crop&q=60"
-    }
-  ],
-  socialFeed: [
-    {
-      id: "feed-1",
-      userName: "Rahul Sharma",
-      userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
-      action: "completed his Bike Goal! 🏍️",
-      goalName: "Royal Enfield Classic 350",
-      time: "2 hours ago",
-      likes: 15,
-      likedByMe: false,
-      comments: [
-        { id: "c-1", user: "Sneha Patel", text: "Incredible Rahul! What a proud moment!" },
-        { id: "c-2", user: "Amit Verma", text: "Amazing discipline brother! Enjoy the ride!" }
-      ]
-    },
-    {
-      id: "feed-2",
-      userName: "Sneha Patel",
-      userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60",
-      action: "unlocked 'Discipline Master' badge! 🔥",
-      time: "6 hours ago",
-      likes: 8,
-      likedByMe: true,
-      comments: []
-    }
-  ],
-  friends: [
-    {
-      id: "friend-1",
-      name: "Rahul Sharma",
-      avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60",
-      level: 6,
-      isFollowing: true,
-      streak: 14
-    },
-    {
-      id: "friend-2",
-      name: "Sneha Patel",
-      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60",
-      level: 9,
-      isFollowing: true,
-      streak: 30
-    },
-    {
-      id: "friend-3",
-      name: "Amit Verma",
-      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
-      level: 2,
-      isFollowing: false,
-      streak: 3
-    }
-  ]
-};
+// Default state containing neutral seed data
+const defaultData = defaultSeedData;
 
 if (!fs.existsSync(DB_PATH)) {
   fs.writeFileSync(DB_PATH, JSON.stringify(defaultData, null, 2));
@@ -380,6 +82,18 @@ function hydrateDB(db: any) {
   }
   if (!db.profile.cooldownRewards) {
     db.profile.cooldownRewards = [];
+    updated = true;
+  }
+
+  // Hydrate categories if missing or empty
+  if (!Array.isArray(db.categories) || db.categories.length === 0) {
+    db.categories = defaultCategories;
+    updated = true;
+  }
+
+  // Hydrate transactions if missing
+  if (!Array.isArray(db.transactions)) {
+    db.transactions = defaultTransactions;
     updated = true;
   }
 
@@ -589,10 +303,10 @@ function checkMilestoneCompletions(db: any, goal: any) {
   });
 }
 
-// Process Auto-Saves against current simulation time (July 19, 2026)
+// Process Auto-Saves against current time
 function processAutoSaves() {
   const db = readDB();
-  const now = new Date("2026-07-19T09:43:18-07:00");
+  const now = new Date();
   let updated = false;
 
   db.goals = db.goals.map((goal: any) => {
@@ -653,7 +367,12 @@ processAutoSaves();
 // Express configuration
 app.use(express.json());
 
-// API Endpoints
+// Expense Tracker API Endpoints
+app.use("/api/transactions", transactionsRouter);
+app.use("/api/categories", categoriesRouter);
+app.use("/api/analytics", analyticsRouter);
+
+// Existing Legacy APIs
 
 // 1. Profile APIs
 app.get("/api/profile", (req, res) => {

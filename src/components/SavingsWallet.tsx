@@ -272,15 +272,16 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
             >
               <div className="p-4 bg-[#02042A] text-white flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center font-bold text-xs">R</div>
-                  <span className="font-semibold text-sm">Razorpay</span>
+                  <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center font-bold text-xs">D</div>
+                  <span className="font-semibold text-sm">Demo Deposit</span>
                 </div>
                 <button onClick={() => setShowRazorpayModal(false)} className="text-white/70 hover:text-white cursor-pointer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <div className="p-6 text-center text-slate-800">
-                <h4 className="text-lg font-bold mb-1">GoalSave Wallet</h4>
+                <h4 className="text-lg font-bold mb-1">GoalSave Simulation Wallet</h4>
+                <p className="text-xs text-amber-600 font-medium mb-3">Simulation Mode • Demo Funds Only</p>
                 <p className="text-2xl font-bold text-[#02042A] mb-6">
                   {currency}{Number(depositAmount).toLocaleString()}
                 </p>
@@ -289,10 +290,10 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
                   disabled={isProcessing}
                   className="w-full py-3 bg-[#3395FF] hover:bg-[#2080ea] text-white font-bold rounded flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-70"
                 >
-                  {isProcessing ? "Processing..." : "Pay Now"}
+                  {isProcessing ? "Adding Demo Funds..." : "Confirm Demo Deposit"}
                 </button>
                 <p className="text-[10px] text-slate-500 mt-4 flex items-center justify-center gap-1">
-                  <ShieldCheck className="h-3 w-3" /> Secured by Razorpay Mock
+                  <ShieldCheck className="h-3 w-3" /> Simulated wallet balance for savings goals
                 </p>
               </div>
             </motion.div>
@@ -310,18 +311,19 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-2 text-slate-100">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/Google_Pay_%28GPay%29_Logo_%282020%29.svg" alt="GPay" className="h-6" />
-                    <span className="font-semibold text-sm">Bank Transfer</span>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs">DEMO</span>
+                    <span className="font-semibold text-sm">Demo Withdrawal</span>
                   </div>
                   <button onClick={() => setShowGPayModal(false)} className="text-slate-500 hover:text-slate-300 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
                 <div className="text-center mb-6">
-                  <p className="text-xs text-slate-400 mb-1">Withdrawing</p>
+                  <p className="text-xs text-slate-400 mb-1">Simulated Withdrawal</p>
                   <p className="text-3xl font-bold text-amber-400">
                     {currency}{Number(withdrawAmount).toLocaleString()}
                   </p>
+                  <p className="text-[11px] text-slate-400 mt-1">Simulation Mode • No actual money transferred</p>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -329,7 +331,7 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
                       <span className="text-xs font-bold text-slate-400">SBI</span>
                     </div>
                     <div className="text-left">
-                      <p className="text-xs font-semibold text-slate-200">State Bank of India</p>
+                      <p className="text-xs font-semibold text-slate-200">Demo Account</p>
                       <p className="text-[10px] text-slate-500">**** 4392</p>
                     </div>
                   </div>
@@ -339,7 +341,7 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
                   disabled={isProcessing}
                   className="w-full py-3 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-70"
                 >
-                  {isProcessing ? "Processing Transfer..." : "Confirm Transfer"}
+                  {isProcessing ? "Processing Demo Transfer..." : "Confirm Demo Withdrawal"}
                 </button>
               </div>
             </motion.div>

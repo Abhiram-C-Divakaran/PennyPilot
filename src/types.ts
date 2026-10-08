@@ -163,5 +163,11 @@ export interface AppState {
   partnerDeals: PartnerDeal[];
   socialFeed: FeedItem[];
   friends: Friend[];
+  transactions: import("./types/transaction").FinanceTransaction[];
+  categories: import("./types/category").TransactionCategory[];
 }
+
+export * from "./types/transaction";
+export * from "./types/category";
+export * from "./types/analytics";
 

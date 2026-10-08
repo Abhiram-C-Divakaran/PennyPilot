@@ -71,7 +71,7 @@ export default function GoalCard({
     if (remainingAmount <= 0) return "Fully saved!";
 
     let cyclesRemaining = Math.ceil(remainingAmount / goal.autoSaveAmount);
-    const currentDate = new Date("2026-07-19T09:43:18-07:00");
+    const currentDate = new Date();
 
     if (goal.autoSaveFrequency === "daily") {
       currentDate.setDate(currentDate.getDate() + cyclesRemaining);
@@ -89,7 +89,7 @@ export default function GoalCard({
 
   const getDaysRemainingText = () => {
     if (!goal.targetDate) return "";
-    const diffTime = new Date(goal.targetDate).getTime() - new Date("2026-07-19").getTime();
+    const diffTime = new Date(goal.targetDate).getTime() - new Date().getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays <= 0) return "Deadline passed";
     return `${diffDays} days remaining`;
@@ -97,7 +97,7 @@ export default function GoalCard({
 
   const getVelocityText = () => {
     if (!goal.targetDate) return "";
-    const diffTime = new Date(goal.targetDate).getTime() - new Date("2026-07-19").getTime();
+    const diffTime = new Date(goal.targetDate).getTime() - new Date().getTime();
     const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     const remainingAmount = goal.targetAmount - goal.currentSavings;
     
