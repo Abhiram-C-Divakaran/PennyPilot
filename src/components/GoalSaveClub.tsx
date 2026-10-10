@@ -208,7 +208,7 @@ export default function GoalSaveClub({
         body: JSON.stringify({ plan })
       });
       if (res.ok) {
-        setSuccessMsg(`Welcome to GoalSave Pro! Expanded milestones limits and rewards triggers are now live.`);
+        setSuccessMsg(`Welcome to PennyPilot Pro! Expanded milestones limits and rewards triggers are now live.`);
         setSubTab("rewards");
         onSyncState();
       }
@@ -268,7 +268,7 @@ export default function GoalSaveClub({
       case "money_master": return "Reached Saver Level 10";
       case "goal_crusher": return "Successfully completed your first purchase goal";
       case "dream_builder": return "Successfully completed 10 separate savings goals";
-      default: return "Achieved an exclusive GoalSave milestone";
+      default: return "Achieved an exclusive PennyPilot milestone";
     }
   };
 
@@ -426,7 +426,7 @@ export default function GoalSaveClub({
                     👑
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-amber-300">Upgrade to GoalSave Pro</h4>
+                    <h4 className="font-bold text-xs text-amber-300">Upgrade to PennyPilot Pro</h4>
                     <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
                       Track unlimited active goals, gain automated 1.5x SaveCoins boosts on check-ins, and receive expert personalized AI forecast blueprints. Just ₹99/mo.
                     </p>
@@ -824,7 +824,7 @@ export default function GoalSaveClub({
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-3xl mx-auto shadow-lg shadow-amber-500/20 animate-pulse">
                 👑
               </div>
-              <h2 className="font-display font-extrabold text-xl text-amber-300 tracking-tight">GoalSave Pro subscription</h2>
+              <h2 className="font-display font-extrabold text-xl text-amber-300 tracking-tight">PennyPilot Pro subscription</h2>
               <p className="text-xs text-slate-400 max-w-[85%] mx-auto leading-relaxed">
                 Unlock the complete automated toolkit. Accelerate your savings, bypass free constraints, and invest with gamified excellence.
               </p>
@@ -888,7 +888,7 @@ export default function GoalSaveClub({
 
             {/* Core comparison parameters list */}
             <div className="p-4 bg-slate-950 border border-slate-900 rounded-2xl space-y-3">
-              <h4 className="font-bold text-xs text-slate-200">What is included in GoalSave Pro:</h4>
+              <h4 className="font-bold text-xs text-slate-200">What is included in PennyPilot Pro:</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] text-slate-400 leading-relaxed font-sans">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-400 flex-shrink-0" />

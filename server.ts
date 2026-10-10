@@ -7,26 +7,14 @@ import dotenv from "dotenv";
 import transactionsRouter from "./server/routes/transactions";
 import categoriesRouter from "./server/routes/categories";
 import analyticsRouter from "./server/routes/analytics";
-import { defaultSeedData, defaultCategories, defaultTransactions } from "./server/db/seed";
+import budgetsRouter from "./server/routes/budgets";
+import insightsRouter from "./server/routes/insights";
+import { getDatabase, saveDatabase } from "./server/db/database";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
-
-// Ensure data directory exists
-if (!fs.existsSync(path.join(process.cwd(), "data"))) {
-  fs.mkdirSync(path.join(process.cwd(), "data"), { recursive: true });
-}
-
-// Default state containing neutral seed data
-const defaultData = defaultSeedData;
-
-if (!fs.existsSync(DB_PATH)) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(defaultData, null, 2));
-}
-
 // Adjust saver score stars dynamically
 function adjustSaverScoreStars(profile: any) {
   const score = profile.saverScore || 87;
@@ -55,107 +43,6 @@ function adjustSaverScoreStars(profile: any) {
     profile.saverScoreFactors.discipline = 1;
     profile.saverScoreFactors.goalCompletion = 2;
   }
-}
-
-// Hydrate database on load to ensure new fields exist
-function hydrateDB(db: any) {
-  let updated = false;
-  if (!db.profile) {
-    db.profile = JSON.parse(JSON.stringify(defaultData.profile));
-    updated = true;
-  }
-  if (db.profile.monthlyIncome === undefined) {
-    db.profile.monthlyIncome = 30000;
-    updated = true;
-  }
-  if (db.profile.saverScore === undefined) {
-    db.profile.saverScore = 87;
-    updated = true;
-  }
-  if (!db.profile.saverScoreFactors) {
-    db.profile.saverScoreFactors = { consistency: 5, discipline: 4, goalCompletion: 5 };
-    updated = true;
-  }
-  if (!db.profile.trustLevel) {
-    db.profile.trustLevel = "trusted";
-    updated = true;
-  }
-  if (!db.profile.cooldownRewards) {
-    db.profile.cooldownRewards = [];
-    updated = true;
-  }
-
-  // Hydrate categories if missing or empty
-  if (!Array.isArray(db.categories) || db.categories.length === 0) {
-    db.categories = defaultCategories;
-    updated = true;
-  }
-
-  // Hydrate transactions if missing
-  if (!Array.isArray(db.transactions)) {
-    db.transactions = defaultTransactions;
-    updated = true;
-  }
-
-  if (db.goals) {
-    db.goals.forEach((goal: any) => {
-      if (goal.verifiedSavings === undefined) {
-        goal.verifiedSavings = goal.currentSavings;
-        updated = true;
-      }
-      if (goal.unverifiedSavingsPending === undefined) {
-        goal.unverifiedSavingsPending = 0;
-        updated = true;
-      }
-      
-      // Calculate dailyRecommended and dailyLimit
-      const target = goal.targetDate ? new Date(goal.targetDate) : new Date(Date.now() + 120 * 24 * 60 * 60 * 1000);
-      const start = goal.createdAt ? new Date(goal.createdAt) : new Date(Date.now());
-      const totalDays = Math.max(1, Math.ceil((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-      const dailyRec = Math.max(1, Math.ceil(goal.targetAmount / totalDays));
-      
-      let trustCap = 500;
-      if (db.profile.trustLevel === "trusted" || db.profile.level >= 3) {
-        trustCap = 1500;
-      }
-      if (db.profile.trustLevel === "verified" || db.profile.level >= 10) {
-        trustCap = 50000;
-      }
-
-      const dailyLimit = Math.min(trustCap, Math.max(500, Math.ceil(dailyRec * 1.5)));
-      
-      if (goal.dailyRecommended !== dailyRec) {
-        goal.dailyRecommended = dailyRec;
-        updated = true;
-      }
-      if (goal.dailyLimit !== dailyLimit) {
-        goal.dailyLimit = dailyLimit;
-        updated = true;
-      }
-    });
-  }
-
-  if (updated) {
-    writeDB(db);
-  }
-  return db;
-}
-
-// Read database
-function readDB() {
-  try {
-    const raw = fs.readFileSync(DB_PATH, "utf-8");
-    const parsed = JSON.parse(raw);
-    return hydrateDB(parsed);
-  } catch (err) {
-    const defaultCopy = JSON.parse(JSON.stringify(defaultData));
-    return hydrateDB(defaultCopy);
-  }
-}
-
-// Write database
-function writeDB(data: any) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
 
 // Helper: Award SaveCoins & XP with Level-Up checking
@@ -305,7 +192,7 @@ function checkMilestoneCompletions(db: any, goal: any) {
 
 // Process Auto-Saves against current time
 function processAutoSaves() {
-  const db = readDB();
+  const db = getDatabase();
   const now = new Date();
   let updated = false;
 
@@ -357,7 +244,7 @@ function processAutoSaves() {
   });
 
   if (updated) {
-    writeDB(db);
+    saveDatabase(db);
   }
 }
 
@@ -371,36 +258,38 @@ app.use(express.json());
 app.use("/api/transactions", transactionsRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/budgets", budgetsRouter);
+app.use("/api/insights", insightsRouter);
 
 // Existing Legacy APIs
 
 // 1. Profile APIs
 app.get("/api/profile", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.profile);
 });
 
 app.put("/api/profile", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   db.profile = { ...db.profile, ...req.body };
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.profile);
 });
 
 // 2. Goal APIs
 app.get("/api/goals", (req, res) => {
   processAutoSaves();
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.goals);
 });
 
 app.post("/api/goals", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   
   // Premium subscription check
   const activeCount = db.goals.filter((g: any) => g.status === "active").length;
   if (!db.profile.isPremium && activeCount >= 3) {
-    return res.status(403).json({ error: "Goal limit reached. Standard users can track up to 3 active goals. Upgrade to GoalSave Pro for unlimited goals!" });
+    return res.status(403).json({ error: "Goal limit reached. Standard users can track up to 3 active goals. Upgrade to PennyPilot Pro for unlimited goals!" });
   }
 
   const newGoal = {
@@ -440,12 +329,12 @@ app.post("/api/goals", (req, res) => {
     checkMilestoneCompletions(db, newGoal);
   }
 
-  writeDB(db);
+  saveDatabase(db);
   res.status(201).json(newGoal);
 });
 
 app.put("/api/goals/:id", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const goalIndex = db.goals.findIndex((g: any) => g.id === req.params.id);
   if (goalIndex === -1) {
     return res.status(404).json({ error: "Goal not found" });
@@ -455,12 +344,12 @@ app.put("/api/goals/:id", (req, res) => {
   db.goals[goalIndex] = updatedGoal;
   
   checkMilestoneCompletions(db, updatedGoal);
-  writeDB(db);
+  saveDatabase(db);
   res.json(updatedGoal);
 });
 
 app.delete("/api/goals/:id", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const goalIndex = db.goals.findIndex((g: any) => g.id === req.params.id);
   if (goalIndex !== -1) {
     const goal = db.goals[goalIndex];
@@ -476,14 +365,14 @@ app.delete("/api/goals/:id", (req, res) => {
       });
     }
     db.goals.splice(goalIndex, 1);
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json({ success: true, profile: db.profile });
 });
 
 // Manual save endpoint with anti-exploit limits & source validation
 app.post("/api/goals/:id/save", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const goalIndex = db.goals.findIndex((g: any) => g.id === req.params.id);
   if (goalIndex === -1) {
     return res.status(404).json({ error: "Goal not found" });
@@ -589,13 +478,13 @@ app.post("/api/goals/:id/save", (req, res) => {
     limitMessage = `You added ${db.profile.currency || "₹"}${amount.toLocaleString()}. Only ${db.profile.currency || "₹"}${verifiedPortion.toLocaleString()} counts toward today's rewards progress. The remaining ${db.profile.currency || "₹"}${unverifiedPortion.toLocaleString()} will be verified over future days.`;
   }
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ goal, wallet: db.wallet, profile: db.profile, notifications: db.notifications, limitMessage });
 });
 
 // Verify pending unverified savings (simulates a daily pass/audit)
 app.post("/api/goals/:id/verify-pending", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const goalIndex = db.goals.findIndex((g: any) => g.id === req.params.id);
   if (goalIndex === -1) {
     return res.status(404).json({ error: "Goal not found" });
@@ -639,13 +528,13 @@ app.post("/api/goals/:id/verify-pending", (req, res) => {
   });
 
   checkMilestoneCompletions(db, goal);
-  writeDB(db);
+  saveDatabase(db);
   res.json({ goal, profile: db.profile, notifications: db.notifications });
 });
 
 // Fast Forward security cooldown (unlock rewards instantly for testing)
 app.post("/api/profile/cooldown/fast-forward", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   if (!db.profile.cooldownRewards || db.profile.cooldownRewards.length === 0) {
     return res.status(400).json({ error: "No pending cooldown rewards to verify." });
   }
@@ -669,13 +558,13 @@ app.post("/api/profile/cooldown/fast-forward", (req, res) => {
     });
   }
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, notifications: db.notifications });
 });
 
 // Claim security-audited ready cooldown reward
 app.post("/api/profile/cooldown/:id/claim", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   if (!db.profile.cooldownRewards) {
     return res.status(404).json({ error: "No cooldown rewards" });
   }
@@ -711,13 +600,13 @@ app.post("/api/profile/cooldown/:id/claim", (req, res) => {
   db.profile.saverScore = Math.min(100, (db.profile.saverScore || 87) + 5);
   adjustSaverScoreStars(db.profile);
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, notifications: db.notifications });
 });
 
 // Update profile income and recalculate dailyRecommended & dailyLimit
 app.post("/api/profile/update-income", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const income = Number(req.body.income);
   if (isNaN(income) || income < 0) {
     return res.status(400).json({ error: "Invalid income amount" });
@@ -746,13 +635,13 @@ app.post("/api/profile/update-income", (req, res) => {
     goal.dailyLimit = dailyLimit;
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, goals: db.goals });
 });
 
 // Withdraw completed goal endpoint
 app.post("/api/goals/:id/withdraw", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const goalIndex = db.goals.findIndex((g: any) => g.id === req.params.id);
   if (goalIndex === -1) {
     return res.status(404).json({ error: "Goal not found" });
@@ -781,18 +670,18 @@ app.post("/api/goals/:id/withdraw", (req, res) => {
     description: `Withdrew savings of ${db.profile.currency}${withdrawnAmount} from completed goal '${goal.name}'`
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ goal, wallet: db.wallet });
 });
 
 // 3. Wallet APIs
 app.get("/api/wallet", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.wallet);
 });
 
 app.post("/api/wallet/deposit", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const amount = Number(req.body.amount);
   if (isNaN(amount) || amount <= 0) {
     return res.status(400).json({ error: "Invalid deposit amount" });
@@ -807,12 +696,12 @@ app.post("/api/wallet/deposit", (req, res) => {
     description: `Added funds via Razorpay`
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.wallet);
 });
 
 app.post("/api/wallet/withdraw", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const amount = Number(req.body.amount);
   if (isNaN(amount) || amount <= 0) {
     return res.status(400).json({ error: "Invalid withdrawal amount" });
@@ -831,26 +720,26 @@ app.post("/api/wallet/withdraw", (req, res) => {
     description: `Withdrew to GPay (Bank Account)`
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.wallet);
 });
 
 // 4. Notification APIs
 app.get("/api/notifications", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.notifications);
 });
 
 app.post("/api/notifications/read", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   db.notifications = db.notifications.map((n: any) => ({ ...n, read: true }));
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.notifications);
 });
 
 // 5. Daily Saving Streak APIs
 app.post("/api/streak/checkin", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const todayStr = new Date().toISOString().split("T")[0]; // simulation anchor "2026-07-19"
   
   if (db.profile.lastCheckIn === todayStr) {
@@ -879,12 +768,12 @@ app.post("/api/streak/checkin", (req, res) => {
   }
 
   awardSaveCoinsAndXP(db, rewardCoins, Math.floor(rewardCoins / 2), bonusReason);
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, notifications: db.notifications });
 });
 
 app.post("/api/streak/recover", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   if (db.profile.saveCoins < 100) {
     return res.status(400).json({ error: "Insufficient SaveCoins. Recovering streak costs 100 SaveCoins." });
   }
@@ -908,30 +797,30 @@ app.post("/api/streak/recover", (req, res) => {
     read: false
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, notifications: db.notifications });
 });
 
 // 6. Savings Challenges APIs
 app.get("/api/challenges", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.challenges);
 });
 
 app.post("/api/challenges/:id/join", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const challenge = db.challenges.find((c: any) => c.id === req.params.id);
   if (!challenge) {
     return res.status(404).json({ error: "Challenge not found" });
   }
 
   challenge.joined = true;
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.challenges);
 });
 
 app.post("/api/challenges/:id/progress", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const challenge = db.challenges.find((c: any) => c.id === req.params.id);
   if (!challenge) {
     return res.status(404).json({ error: "Challenge not found" });
@@ -965,18 +854,18 @@ app.post("/api/challenges/:id/progress", (req, res) => {
     });
   }
 
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.challenges);
 });
 
 // 7. Reward Marketplace APIs
 app.get("/api/rewards", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.rewards);
 });
 
 app.post("/api/rewards/:id/redeem", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const reward = db.rewards.find((r: any) => r.id === req.params.id);
   if (!reward) {
     return res.status(404).json({ error: "Reward item not found" });
@@ -1009,46 +898,46 @@ app.post("/api/rewards/:id/redeem", (req, res) => {
     read: false
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json({ profile: db.profile, rewards: db.rewards, notifications: db.notifications });
 });
 
 // 8. Partner Deals APIs
 app.get("/api/partners", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.partnerDeals);
 });
 
 app.post("/api/partners/:id/click", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const deal = db.partnerDeals.find((p: any) => p.id === req.params.id);
   if (deal) {
     deal.clicks += 1;
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json({ success: true, code: deal ? deal.couponCode : "" });
 });
 
 app.post("/api/partners/:id/redeem", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const deal = db.partnerDeals.find((p: any) => p.id === req.params.id);
   if (deal) {
     deal.redemptions += 1;
     // Award 50 SaveCoins bonus for leveraging affiliate referral
     awardSaveCoinsAndXP(db, 50, 20, `Completed Partner offer: '${deal.name}'`);
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json({ success: true, profile: db.profile });
 });
 
 // 9. Social Feed & Friends APIs
 app.get("/api/social/feed", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.socialFeed);
 });
 
 app.post("/api/social/feed/:id/like", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const feedIndex = db.socialFeed.findIndex((f: any) => f.id === req.params.id);
   if (feedIndex !== -1) {
     const item = db.socialFeed[feedIndex];
@@ -1059,13 +948,13 @@ app.post("/api/social/feed/:id/like", (req, res) => {
       item.likes += 1;
       item.likedByMe = true;
     }
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json(db.socialFeed);
 });
 
 app.post("/api/social/feed/:id/comment", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const feedIndex = db.socialFeed.findIndex((f: any) => f.id === req.params.id);
   if (feedIndex !== -1) {
     const item = db.socialFeed[feedIndex];
@@ -1074,29 +963,29 @@ app.post("/api/social/feed/:id/comment", (req, res) => {
       user: db.profile.name,
       text: req.body.text || "Keep crushing it! 👍"
     });
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json(db.socialFeed);
 });
 
 app.get("/api/social/friends", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.friends);
 });
 
 app.post("/api/social/friends/:id/follow", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const friend = db.friends.find((f: any) => f.id === req.params.id);
   if (friend) {
     friend.isFollowing = !friend.isFollowing;
-    writeDB(db);
+    saveDatabase(db);
   }
   res.json(db.friends);
 });
 
 // 10. Subscription / Premium management
 app.post("/api/subscription/upgrade", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const plan = req.body.plan; // monthly or yearly
   if (plan !== "monthly" && plan !== "yearly") {
     return res.status(400).json({ error: "Invalid plan" });
@@ -1114,33 +1003,33 @@ app.post("/api/subscription/upgrade", (req, res) => {
   db.profile.subscriptionExpires = expires.toISOString();
 
   // Award 200 SaveCoins bonus for upgrading!
-  awardSaveCoinsAndXP(db, 200, 100, `Upgraded to GoalSave Pro (${plan} plan)! 👑`);
+  awardSaveCoinsAndXP(db, 200, 100, `Upgraded to PennyPilot Pro (${plan} plan)! 👑`);
 
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.profile);
 });
 
 app.post("/api/subscription/cancel", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   db.profile.isPremium = false;
   db.profile.subscriptionPlan = "none";
   db.profile.subscriptionExpires = undefined;
   
   db.notifications.unshift({
     id: "notif-" + Math.random().toString(36).substr(2, 9),
-    text: "Your GoalSave Pro subscription has been cancelled. Active goals limit is set back to 3.",
+    text: "Your PennyPilot Pro subscription has been cancelled. Active goals limit is set back to 3.",
     type: "info",
     date: new Date().toISOString(),
     read: false
   });
 
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.profile);
 });
 
 // 11. AI Coach API using Gemini 3.5 Flash
 app.post("/api/coach/chat", async (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   const userMessage = req.body.message;
   if (!userMessage) {
     return res.status(400).json({ error: "Message is required" });
@@ -1162,7 +1051,7 @@ app.post("/api/coach/chat", async (req, res) => {
 
   const totalSaved = db.goals.reduce((acc: number, g: any) => acc + g.currentSavings, 0);
 
-  const systemInstruction = `You are "GoalSave AI Savings Coach", an intelligent, gamified financial counselor.
+  const systemInstruction = `You are "PennyPilot AI Savings Coach", an intelligent, gamified financial counselor.
 Your role is to guide ${db.profile.name} to optimize savings, compound SaveCoins, complete savings challenges, and predict completion dates.
 
 Abhiram's real-time gamified dashboard context:
@@ -1200,7 +1089,7 @@ Your advice MUST follow these instructions:
       const coachMsgObj = { id: "msg-" + Math.random().toString(36).substr(2, 9), sender: "coach" as const, text: randomSim, timestamp: new Date().toISOString() };
       
       db.chatHistory.push(userMsgObj, coachMsgObj);
-      writeDB(db);
+      saveDatabase(db);
       return res.json({ reply: randomSim, history: db.chatHistory });
     }
 
@@ -1232,7 +1121,7 @@ Your advice MUST follow these instructions:
     const coachMsgObj = { id: "msg-" + Math.random().toString(36).substr(2, 9), sender: "coach" as const, text: replyText, timestamp: new Date().toISOString() };
     
     db.chatHistory.push(userMsgObj, coachMsgObj);
-    writeDB(db);
+    saveDatabase(db);
 
     res.json({ reply: replyText, history: db.chatHistory });
 
@@ -1244,22 +1133,22 @@ Your advice MUST follow these instructions:
 
 // Chat history retrieval API
 app.get("/api/coach/history", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   res.json(db.chatHistory);
 });
 
 // Clear chat history
 app.post("/api/coach/clear", (req, res) => {
-  const db = readDB();
+  const db = getDatabase();
   db.chatHistory = [
     {
       id: "msg-1",
       sender: "coach",
-      text: `Hello ${db.profile.name}! I am your GoalSave AI Financial Coach. How can I help you optimize your savings today?`,
+      text: `Hello ${db.profile.name}! I am your PennyPilot AI Financial Coach. How can I help you optimize your savings today?`,
       timestamp: new Date().toISOString()
     }
   ];
-  writeDB(db);
+  saveDatabase(db);
   res.json(db.chatHistory);
 });
 

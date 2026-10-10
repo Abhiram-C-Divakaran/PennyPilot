@@ -165,9 +165,12 @@ export interface AppState {
   friends: Friend[];
   transactions: import("./types/transaction").FinanceTransaction[];
   categories: import("./types/category").TransactionCategory[];
+  budgets: import("./types/budget").Budget[];
 }
 
 export * from "./types/transaction";
 export * from "./types/category";
 export * from "./types/analytics";
+export * from "./types/budget";
+export * from "./types/insight";
 

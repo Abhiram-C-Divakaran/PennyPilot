@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import Header from "./components/Header";
 import { BottomNavigation, NavigationTab } from "./components/BottomNavigation";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { TransactionList } from "./features/transactions/TransactionList";
 import { TransactionForm } from "./features/transactions/TransactionForm";
+import { BudgetScreen } from "./features/budget/BudgetScreen";
+import { InsightsScreen } from "./features/insights/InsightsScreen";
 import { GoalsView } from "./features/goals/GoalsView";
 import {
   getTransactions,
@@ -13,31 +15,95 @@ import {
   deleteTransaction
 } from "./api/transactions";
 import { getCategories } from "./api/categories";
-import { getMonthlyAnalytics, getCategorySpending } from "./api/analytics";
+import {
+  getMonthlyAnalytics,
+  getCategorySpending,
+  getMonthlyTrends,
+  getCategoryTrends
+} from "./api/analytics";
+import {
+  getBudgets,
+  getBudgetProgress,
+  getBudgetSummary,
+  createBudget,
+  updateBudget,
+  deleteBudget
+} from "./api/budgets";
+import { getSpendingInsights } from "./api/insights";
 import {
   FinanceTransaction,
   CreateTransactionInput,
   UpdateTransactionInput
 } from "./types/transaction";
 import { TransactionCategory } from "./types/category";
-import { MonthlyAnalytics, CategorySpendingItem } from "./types/analytics";
+import {
+  MonthlyAnalytics,
+  CategorySpendingItem,
+  MonthlySpendingTrend,
+  CategoryTrend
+} from "./types/analytics";
+import {
+  Budget,
+  BudgetProgress,
+  MonthlyBudgetSummary,
+  CreateBudgetInput,
+  UpdateBudgetInput
+} from "./types/budget";
+import { SpendingInsight } from "./types/insight";
 import { UserProfile, SavingsGoal, Wallet as WalletType, AppNotification } from "./types";
+import { getCurrentMonthKey } from "./utils/date";
 
 export default function App() {
-  // Navigation: "home" | "transactions" | "goals"
+  // Navigation: "home" | "transactions" | "budget" | "insights" | "goals"
   const [activeTab, setActiveTab] = useState<NavigationTab>("home");
+
+  // Shared Month Selection (Step 14 - synchronized across all screens)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => getCurrentMonthKey());
 
   // Finance Tracker State
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [monthlyAnalytics, setMonthlyAnalytics] = useState<MonthlyAnalytics>({
-    month: new Date().toISOString().substring(0, 7),
+    month: getCurrentMonthKey(),
     income: 0,
     expenses: 0,
     balance: 0,
     savingsRate: 0
   });
   const [categorySpending, setCategorySpending] = useState<CategorySpendingItem[]>([]);
+
+  // Phase 2: Budgets State
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgetProgress, setBudgetProgress] = useState<BudgetProgress[]>([]);
+  const [budgetSummary, setBudgetSummary] = useState<MonthlyBudgetSummary>({
+    month: getCurrentMonthKey(),
+    totalBudget: 0,
+    totalSpentInBudgetedCategories: 0,
+    remainingBudget: 0,
+    overallPercentage: 0,
+    categoriesOnTrack: 0,
+    categoriesWarning: 0,
+    categoriesOverBudget: 0,
+    budgetCount: 0
+  });
+  const [budgetError, setBudgetError] = useState<string | null>(null);
+
+  // Phase 2: Insights & Trends State
+  const [insights, setInsights] = useState<SpendingInsight[]>([]);
+  const [trends, setTrends] = useState<MonthlySpendingTrend>({
+    currentMonth: getCurrentMonthKey(),
+    previousMonth: "",
+    currentExpenses: 0,
+    previousExpenses: 0,
+    expenseChangeAmount: 0,
+    expenseChangePercentage: 0,
+    currentIncome: 0,
+    previousIncome: 0,
+    incomeChangeAmount: 0,
+    incomeChangePercentage: 0
+  });
+  const [categoryTrends, setCategoryTrends] = useState<CategoryTrend[]>([]);
+  const [insightsError, setInsightsError] = useState<string | null>(null);
 
   // Savings Goals & Profile State (Preserved for goals flow)
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -61,14 +127,14 @@ export default function App() {
     }, 3500);
   };
 
-  // Sync Finance Data (Transactions, Categories, Analytics)
-  const syncFinanceData = useCallback(async () => {
+  // Sync Finance Data for Selected Month
+  const syncFinanceData = useCallback(async (month: string) => {
     try {
       const [txs, cats, analytics, spending] = await Promise.all([
         getTransactions(),
         getCategories(),
-        getMonthlyAnalytics(),
-        getCategorySpending()
+        getMonthlyAnalytics(month),
+        getCategorySpending(month)
       ]);
 
       setTransactions(txs);
@@ -77,6 +143,42 @@ export default function App() {
       setCategorySpending(spending);
     } catch (err) {
       console.error("Failed to sync finance data:", err);
+    }
+  }, []);
+
+  // Sync Phase 2 Budget Data for Selected Month
+  const syncBudgetData = useCallback(async (month: string) => {
+    setBudgetError(null);
+    try {
+      const [bList, bProg, bSum] = await Promise.all([
+        getBudgets(month),
+        getBudgetProgress(month),
+        getBudgetSummary(month)
+      ]);
+      setBudgets(bList);
+      setBudgetProgress(bProg);
+      setBudgetSummary(bSum);
+    } catch (err: any) {
+      console.error("Failed to sync budget data:", err);
+      setBudgetError(err?.message || "Could not load budgets.");
+    }
+  }, []);
+
+  // Sync Phase 2 Insights & Trends for Selected Month
+  const syncInsightsData = useCallback(async (month: string) => {
+    setInsightsError(null);
+    try {
+      const [ins, tr, catTr] = await Promise.all([
+        getSpendingInsights(month),
+        getMonthlyTrends(month),
+        getCategoryTrends(month)
+      ]);
+      setInsights(ins);
+      setTrends(tr);
+      setCategoryTrends(catTr);
+    } catch (err: any) {
+      console.error("Failed to sync insights data:", err);
+      setInsightsError(err?.message || "Could not load insights.");
     }
   }, []);
 
@@ -106,15 +208,24 @@ export default function App() {
     }
   }, []);
 
-  // Initial Load
+  // Sync all data when selected month changes
   useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
-      await Promise.all([syncFinanceData(), syncGoalsData()]);
+    const loadAll = async () => {
+      await Promise.all([
+        syncFinanceData(selectedMonth),
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth),
+        syncGoalsData()
+      ]);
       setIsLoading(false);
     };
-    init();
-  }, [syncFinanceData, syncGoalsData]);
+    loadAll();
+  }, [selectedMonth, syncFinanceData, syncBudgetData, syncInsightsData, syncGoalsData]);
+
+  // Handle Month Change from any screen
+  const handleMonthChange = (newMonth: string) => {
+    setSelectedMonth(newMonth);
+  };
 
   // Handle Mark Notifications Read
   const handleMarkNotificationsRead = async () => {
@@ -141,21 +252,80 @@ export default function App() {
 
   // Save Transaction (Add or Edit)
   const handleSaveTransaction = async (data: CreateTransactionInput | UpdateTransactionInput) => {
-    if (selectedTransaction) {
-      await updateTransaction(selectedTransaction.id, data);
-      showToast("Transaction updated successfully", "success");
-    } else {
-      await createTransaction(data as CreateTransactionInput);
-      showToast("Transaction recorded successfully", "success");
+    try {
+      if (selectedTransaction) {
+        await updateTransaction(selectedTransaction.id, data);
+        showToast("Transaction updated successfully", "success");
+      } else {
+        await createTransaction(data as CreateTransactionInput);
+        showToast("Transaction recorded successfully", "success");
+      }
+      await Promise.all([
+        syncFinanceData(selectedMonth),
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to save transaction", "error");
     }
-    await syncFinanceData();
   };
 
   // Delete Transaction
   const handleDeleteTransaction = async (id: string) => {
-    await deleteTransaction(id);
-    showToast("Transaction deleted", "success");
-    await syncFinanceData();
+    try {
+      await deleteTransaction(id);
+      showToast("Transaction deleted", "success");
+      await Promise.all([
+        syncFinanceData(selectedMonth),
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to delete transaction", "error");
+    }
+  };
+
+  // Budget Handlers (Step 4 & 8)
+  const handleCreateBudget = async (data: CreateBudgetInput) => {
+    try {
+      await createBudget(data);
+      showToast("Budget saved successfully", "success");
+      await Promise.all([
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to create budget", "error");
+      throw err;
+    }
+  };
+
+  const handleUpdateBudget = async (id: string, data: UpdateBudgetInput) => {
+    try {
+      await updateBudget(id, data);
+      showToast("Budget updated successfully", "success");
+      await Promise.all([
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to update budget", "error");
+      throw err;
+    }
+  };
+
+  const handleDeleteBudget = async (id: string) => {
+    try {
+      await deleteBudget(id);
+      showToast("Budget removed", "success");
+      await Promise.all([
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to delete budget", "error");
+      throw err;
+    }
   };
 
   // Goal APIs Handlers
@@ -273,13 +443,20 @@ export default function App() {
     hour12: true
   });
 
+  // Determine top alert for Dashboard
+  const topInsight =
+    insights.find((i) => i.severity === "critical") ||
+    insights.find((i) => i.severity === "warning") ||
+    insights[0] ||
+    null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-start justify-center p-0 md:p-6 select-none font-sans">
-      {/* Phone Framing Wrapper for Mobile-First Aesthetic */}
+      {/* Framing Wrapper for Mobile-First Aesthetic */}
       <div className="w-full max-w-md md:max-w-3xl min-h-screen md:min-h-[840px] md:rounded-3xl bg-slate-950 md:border md:border-slate-800/80 md:shadow-2xl md:shadow-black flex flex-col overflow-hidden relative">
-        {/* Dynamic Status Bar (Realistic mobile environment, dynamic date) */}
+        {/* Dynamic Status Bar */}
         <div className="hidden md:flex justify-between items-center bg-slate-950 px-6 py-1.5 border-b border-slate-900 text-[10px] font-mono text-slate-500">
-          <span>Carrier: GoalSave Net</span>
+          <span>Carrier: PennyPilot Net</span>
           <div className="flex items-center space-x-2">
             <span>{currentDateStr}</span>
             <span>{currentTimeStr}</span>
@@ -338,14 +515,20 @@ export default function App() {
               {/* TAB 1: Home Dashboard */}
               {activeTab === "home" && (
                 <Dashboard
+                  selectedMonth={selectedMonth}
+                  onMonthChange={handleMonthChange}
                   monthlyAnalytics={monthlyAnalytics}
                   categorySpending={categorySpending}
+                  budgetSummary={budgetSummary}
+                  topInsight={topInsight}
                   recentTransactions={transactions.slice(0, 5)}
                   categories={categories}
                   goals={goals}
                   onAddTransaction={handleOpenAddTransaction}
                   onSelectTransaction={handleOpenEditTransaction}
                   onViewAllTransactions={() => setActiveTab("transactions")}
+                  onViewBudgets={() => setActiveTab("budget")}
+                  onViewInsights={() => setActiveTab("insights")}
                   onViewAllGoals={() => setActiveTab("goals")}
                 />
               )}
@@ -360,7 +543,39 @@ export default function App() {
                 />
               )}
 
-              {/* TAB 3: Savings Goals */}
+              {/* TAB 3: Category Budgets (Phase 2 Step 7) */}
+              {activeTab === "budget" && (
+                <BudgetScreen
+                  selectedMonth={selectedMonth}
+                  onMonthChange={handleMonthChange}
+                  budgets={budgets}
+                  budgetProgress={budgetProgress}
+                  budgetSummary={budgetSummary}
+                  categories={categories}
+                  isLoading={false}
+                  error={budgetError}
+                  onRetry={() => syncBudgetData(selectedMonth)}
+                  onCreateBudget={handleCreateBudget}
+                  onUpdateBudget={handleUpdateBudget}
+                  onDeleteBudget={handleDeleteBudget}
+                />
+              )}
+
+              {/* TAB 4: Spending Insights & Trends (Phase 2 Step 12) */}
+              {activeTab === "insights" && (
+                <InsightsScreen
+                  selectedMonth={selectedMonth}
+                  onMonthChange={handleMonthChange}
+                  insights={insights}
+                  trend={trends}
+                  categoryTrends={categoryTrends}
+                  isLoading={false}
+                  error={insightsError}
+                  onRetry={() => syncInsightsData(selectedMonth)}
+                />
+              )}
+
+              {/* TAB 5: Savings Goals (Preserved Feature) */}
               {activeTab === "goals" && (
                 <GoalsView
                   goals={goals}
@@ -380,6 +595,17 @@ export default function App() {
             </>
           )}
         </main>
+
+        {/* Floating Add Transaction Action Button */}
+        <button
+          type="button"
+          onClick={handleOpenAddTransaction}
+          className="fixed bottom-20 right-4 sm:right-6 md:right-10 z-40 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-zinc-950 font-bold flex items-center justify-center shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all ring-4 ring-zinc-950 cursor-pointer"
+          aria-label="Add Transaction"
+          title="Add Transaction"
+        >
+          <Plus className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
+        </button>
 
         {/* Bottom Navigation */}
         <BottomNavigation

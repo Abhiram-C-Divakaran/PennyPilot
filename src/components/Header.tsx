@@ -28,12 +28,12 @@ export default function Header({
       {/* Brand Logo */}
       <div className="flex items-center space-x-2">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/15">
-          <span className="font-display font-bold text-lg text-slate-950">G</span>
+          <span className="font-display font-bold text-lg text-slate-950">P</span>
         </div>
         <div>
           <div className="flex items-center space-x-1">
             <h1 className="font-display font-bold text-lg tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              GoalSave
+              PennyPilot
             </h1>
             {profile.isPremium && (
               <span className="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">

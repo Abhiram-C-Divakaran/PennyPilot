@@ -1,5 +1,6 @@
 import { TransactionCategory } from "../../src/types/category";
 import { FinanceTransaction } from "../../src/types/transaction";
+import { Budget } from "../../src/types/budget";
 
 export const defaultCategories: TransactionCategory[] = [
   // Expense Categories
@@ -95,10 +96,47 @@ export const defaultTransactions: FinanceTransaction[] = [
   }
 ];
 
+const seedMonth = new Date().toISOString().substring(0, 7);
+
+export const defaultBudgets: Budget[] = [
+  {
+    id: `bgt-food-${seedMonth}`,
+    categoryId: "food",
+    month: seedMonth,
+    limit: 5000,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: `bgt-groceries-${seedMonth}`,
+    categoryId: "groceries",
+    month: seedMonth,
+    limit: 4000,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: `bgt-shopping-${seedMonth}`,
+    categoryId: "shopping",
+    month: seedMonth,
+    limit: 3500,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: `bgt-transport-${seedMonth}`,
+    categoryId: "transport",
+    month: seedMonth,
+    limit: 2000,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
 export const defaultSeedData = {
   profile: {
     name: "Demo User",
-    email: "demo@goalsave.app",
+    email: "demo@pennypilot.app",
     phone: "+91 90000 00000",
     currency: "₹",
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60",
@@ -122,6 +160,7 @@ export const defaultSeedData = {
   },
   categories: defaultCategories,
   transactions: defaultTransactions,
+  budgets: defaultBudgets,
   goals: [
     {
       id: "goal-1",
@@ -171,7 +210,7 @@ export const defaultSeedData = {
   notifications: [
     {
       id: "notif-1",
-      text: "Welcome to Save Tracker! Track expenses and reach your savings milestones.",
+      text: "Welcome to PennyPilot! Track expenses, set budgets, and achieve your financial targets.",
       type: "info",
       date: new Date().toISOString(),
       read: false

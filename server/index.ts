@@ -1,7 +1,11 @@
 export { default as transactionsRouter } from "./routes/transactions";
 export { default as categoriesRouter } from "./routes/categories";
 export { default as analyticsRouter } from "./routes/analytics";
+export { default as budgetsRouter } from "./routes/budgets";
+export { default as insightsRouter } from "./routes/insights";
 export * from "./db/database";
 export * from "./db/seed";
 export * from "./services/transactionService";
 export * from "./services/analyticsService";
+export * from "./services/budgetService";
+export * from "./services/insightService";

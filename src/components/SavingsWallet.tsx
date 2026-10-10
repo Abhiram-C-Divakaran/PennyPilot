@@ -280,7 +280,7 @@ export default function SavingsWallet({ wallet, currency, onDeposit, onWithdraw,
                 </button>
               </div>
               <div className="p-6 text-center text-slate-800">
-                <h4 className="text-lg font-bold mb-1">GoalSave Simulation Wallet</h4>
+                <h4 className="text-lg font-bold mb-1">PennyPilot Simulation Wallet</h4>
                 <p className="text-xs text-amber-600 font-medium mb-3">Simulation Mode • Demo Funds Only</p>
                 <p className="text-2xl font-bold text-[#02042A] mb-6">
                   {currency}{Number(depositAmount).toLocaleString()}

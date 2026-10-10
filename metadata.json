@@ -1,6 +1,6 @@
 {
-  "name": "GoalSave",
-  "description": "A personal savings goal tracking app with wallets, automatic savings schedules, analytics, and target celebrations.",
+  "name": "PennyPilot",
+  "description": "A personal expense tracker, budgeting, and financial insights platform.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

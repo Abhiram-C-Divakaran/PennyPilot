@@ -324,5 +324,39 @@
   "rewards": [],
   "partnerDeals": [],
   "socialFeed": [],
-  "friends": []
+  "friends": [],
+  "budgets": [
+    {
+      "id": "bgt-food-2026-10",
+      "categoryId": "food",
+      "month": "2026-10",
+      "limit": 5000,
+      "createdAt": "2026-10-10T14:55:21.657Z",
+      "updatedAt": "2026-10-10T14:55:21.657Z"
+    },
+    {
+      "id": "bgt-groceries-2026-10",
+      "categoryId": "groceries",
+      "month": "2026-10",
+      "limit": 4000,
+      "createdAt": "2026-10-10T14:55:21.657Z",
+      "updatedAt": "2026-10-10T14:55:21.657Z"
+    },
+    {
+      "id": "bgt-shopping-2026-10",
+      "categoryId": "shopping",
+      "month": "2026-10",
+      "limit": 3500,
+      "createdAt": "2026-10-10T14:55:21.657Z",
+      "updatedAt": "2026-10-10T14:55:21.657Z"
+    },
+    {
+      "id": "bgt-transport-2026-10",
+      "categoryId": "transport",
+      "month": "2026-10",
+      "limit": 2000,
+      "createdAt": "2026-10-10T14:55:21.657Z",
+      "updatedAt": "2026-10-10T14:55:21.657Z"
+    }
+  ]
 }

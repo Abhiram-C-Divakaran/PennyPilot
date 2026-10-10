@@ -289,7 +289,7 @@ export default function GoalModal({ isOpen, onClose, onSubmit, currency }: GoalM
 
                 {autoSaveFrequency !== "none" && (
                   <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-                    GoalSave will auto-transfer **{currency}{autoSaveAmount || "0"}** periodically from your digital wallet directly into this savings pool.
+                    PennyPilot will auto-transfer **{currency}{autoSaveAmount || "0"}** periodically from your digital wallet directly into this savings pool.
                   </p>
                 )}
               </div>

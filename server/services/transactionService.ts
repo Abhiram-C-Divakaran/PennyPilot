@@ -1,5 +1,6 @@
 import { getDatabase, saveDatabase } from "../db/database";
 import { FinanceTransaction, CreateTransactionInput, UpdateTransactionInput } from "../../src/types/transaction";
+import { isDateInMonth } from "../utils/date";
 
 export interface TransactionFilterParams {
   limit?: number;
@@ -88,7 +89,7 @@ export function getAllTransactions(filters?: TransactionFilterParams): FinanceTr
   }
 
   if (filters?.month) {
-    list = list.filter((t) => t.timestamp && t.timestamp.startsWith(filters.month!));
+    list = list.filter((t) => t.timestamp && isDateInMonth(t.timestamp, filters.month!));
   }
 
   if (filters?.search && filters.search.trim() !== "") {

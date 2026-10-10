@@ -1,5 +1,5 @@
 /**
- * HTTP API client for GoalSave expense tracker
+ * HTTP API client for PennyPilot expense tracker
  */
 
 export class ApiError extends Error {

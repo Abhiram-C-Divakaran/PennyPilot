@@ -95,6 +95,87 @@ export function getCurrentMonthKey(): string {
 }
 
 /**
+ * Extract YYYY-MM from an ISO date or Date object in the user's intended calendar month
+ */
+export function getMonthKey(dateInput?: string | Date): string {
+  if (!dateInput) return getCurrentMonthKey();
+  try {
+    const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+    if (isNaN(d.getTime())) return getCurrentMonthKey();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  } catch {
+    return getCurrentMonthKey();
+  }
+}
+
+/**
+ * Given YYYY-MM, calculate the previous month YYYY-MM, handling year boundaries (e.g. 2027-01 -> 2026-12)
+ */
+export function getPreviousMonthKey(monthStr: string): string {
+  try {
+    const [yearStr, monthNumStr] = monthStr.split("-");
+    let year = parseInt(yearStr, 10);
+    let month = parseInt(monthNumStr, 10);
+
+    if (isNaN(year) || isNaN(month)) return getCurrentMonthKey();
+
+    month -= 1;
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    }
+
+    return `${year}-${String(month).padStart(2, "0")}`;
+  } catch {
+    return monthStr;
+  }
+}
+
+/**
+ * Given YYYY-MM, calculate the next month YYYY-MM, handling year boundaries (e.g. 2026-12 -> 2027-01)
+ */
+export function getNextMonthKey(monthStr: string): string {
+  try {
+    const [yearStr, monthNumStr] = monthStr.split("-");
+    let year = parseInt(yearStr, 10);
+    let month = parseInt(monthNumStr, 10);
+
+    if (isNaN(year) || isNaN(month)) return getCurrentMonthKey();
+
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+
+    return `${year}-${String(month).padStart(2, "0")}`;
+  } catch {
+    return monthStr;
+  }
+}
+
+/**
+ * Checks whether an ISO timestamp falls into target month YYYY-MM
+ * Parses the actual Date object to correctly respect calendar month boundaries
+ */
+export function isDateInMonth(isoTimestamp?: string, targetMonth?: string): boolean {
+  if (!isoTimestamp || !targetMonth) return false;
+  try {
+    const d = new Date(isoTimestamp);
+    if (isNaN(d.getTime())) {
+      return isoTimestamp.startsWith(targetMonth);
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}` === targetMonth;
+  } catch {
+    return isoTimestamp.startsWith(targetMonth);
+  }
+}
+
+/**
  * Convert ISO string to format suitable for HTML datetime-local input
  */
 export function toDatetimeLocalInput(isoString?: string): string {
