@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PennyPilot</string>
+    <string name="notification_service_label">PennyPilot Payment Capture</string>
+</resources>

@@ -6,6 +6,15 @@ import { categorizeTransaction, AUTO_ACCEPT_CONFIDENCE } from "./categorizationS
 import { checkForDuplicate, generateTransactionFingerprint } from "./deduplicationService";
 import { isValidPositiveAmount, normalizeAmount } from "../utils/finance";
 
+export const RECOGNIZED_PAYMENT_APPS: Record<string, string> = {
+  "com.google.android.apps.nbu.paisa.user": "Google Pay",
+  "com.phonepe.app": "PhonePe",
+  "net.one97.paytm": "Paytm",
+  "in.org.npci.upiapp": "BHIM",
+  "com.dreamplug.androidapp": "CRED",
+  "in.amazon.mShop.android.shopping": "Amazon Pay"
+};
+
 export class IngestionValidationError extends Error {
   code: string;
   constructor(message: string, code = "INVALID_INGESTION_PAYLOAD") {
@@ -96,17 +105,27 @@ export function ingestTransaction(
   // 4. Auto-Categorization Engine
   const categorization = categorizeTransaction(normalizedMerchant, incoming.rawDescription);
 
-  // 5. Calculate Confidence & Determine Review Status (Step 11)
+  // 5. Calculate Confidence & Determine Review Status (Step 11 & Step 38)
   let reviewStatus: TransactionReviewStatus = "pending_review";
   let status: IngestionStatus = "pending_review";
   let resolvedCategoryId = categorization.categoryId;
 
-  if (categorization.confidence >= AUTO_ACCEPT_CONFIDENCE && resolvedCategoryId) {
-    // High confidence (>= 0.90) -> Automatically accepted and confirmed
+  // Unknown financial source apps are treated conservatively unless an explicit user rule matches
+  const isUnknownSourceApp =
+    incoming.source === "notification" &&
+    incoming.sourceApp &&
+    !RECOGNIZED_PAYMENT_APPS[incoming.sourceApp];
+
+  if (
+    categorization.confidence >= AUTO_ACCEPT_CONFIDENCE &&
+    resolvedCategoryId &&
+    (!isUnknownSourceApp || categorization.confidence >= 0.98)
+  ) {
+    // High confidence (>= 0.90) from recognized app or explicit rule -> Automatically accepted and confirmed
     reviewStatus = "confirmed";
     status = "created";
   } else {
-    // Medium / Low confidence (< 0.90) -> Queued for review
+    // Medium / Low confidence (< 0.90) or unknown source app -> Queued for review
     reviewStatus = "pending_review";
     status = "pending_review";
     if (!resolvedCategoryId) {

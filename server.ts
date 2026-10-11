@@ -265,6 +265,16 @@ app.use("/api/insights", insightsRouter);
 app.use("/api/ingestion", ingestionRouter);
 app.use("/api/merchant-rules", merchantRulesRouter);
 
+// System Health Check Endpoint (used by Android client for connection testing)
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "PennyPilot",
+    version: "1.0.0",
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Existing Legacy APIs
 
 // 1. Profile APIs

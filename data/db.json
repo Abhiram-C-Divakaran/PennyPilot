@@ -380,7 +380,7 @@
       "priority": 100,
       "userDefined": true,
       "createdAt": "2026-10-11T04:46:50.242Z",
-      "updatedAt": "2026-10-11T04:49:19.293Z"
+      "updatedAt": "2026-10-11T07:43:15.849Z"
     },
     {
       "id": "rule-zomato",
@@ -391,7 +391,7 @@
       "priority": 100,
       "userDefined": true,
       "createdAt": "2026-10-11T04:46:49.841Z",
-      "updatedAt": "2026-10-11T04:49:19.297Z"
+      "updatedAt": "2026-10-11T07:43:15.854Z"
     },
     {
       "id": "rule-swiggy",

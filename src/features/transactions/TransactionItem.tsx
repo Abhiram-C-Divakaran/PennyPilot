@@ -27,11 +27,24 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   category,
   onClick
 }) => {
+const getSourceBadgeText = (tx: FinanceTransaction): string => {
+  if (tx.source === "import") return "Import";
+  if (tx.source === "notification") {
+    if (tx.sourceApp === "com.google.android.apps.nbu.paisa.user") return "Google Pay";
+    if (tx.sourceApp === "com.phonepe.app") return "PhonePe";
+    if (tx.sourceApp === "net.one97.paytm") return "Paytm";
+    if (tx.sourceApp === "in.org.npci.upiapp") return "BHIM";
+    return "Auto";
+  }
+  return tx.source || "Auto";
+};
+
   const isIncome = transaction.type === "income";
   const title = transaction.merchant || transaction.description || category?.name || "Transaction";
   const categoryName = category?.name || transaction.categoryId;
   const paymentMethodLabel = transaction.paymentMethod ? PAYMENT_LABELS[transaction.paymentMethod] || transaction.paymentMethod : "";
   const timeStr = formatTime(transaction.timestamp);
+  const sourceBadge = getSourceBadgeText(transaction);
 
   return (
     <button
@@ -70,7 +83,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
               <>
                 <span className="text-zinc-600">•</span>
                 <span className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/20 text-[9px] font-semibold tracking-wider">
-                  {transaction.source === "import" ? "Import" : "Auto"}
+                  {sourceBadge}
                 </span>
               </>
             )}

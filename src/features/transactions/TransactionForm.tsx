@@ -417,8 +417,20 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Detection Details</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-semibold uppercase">
-                  {initialData.source}
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-semibold">
+                  {initialData.source === "notification"
+                    ? initialData.sourceApp === "com.google.android.apps.nbu.paisa.user"
+                      ? "Google Pay Notification"
+                      : initialData.sourceApp === "com.phonepe.app"
+                      ? "PhonePe Notification"
+                      : initialData.sourceApp === "net.one97.paytm"
+                      ? "Paytm Notification"
+                      : initialData.sourceApp === "in.org.npci.upiapp"
+                      ? "BHIM Notification"
+                      : "Payment Notification"
+                    : initialData.source === "import"
+                    ? "Bank Statement Import"
+                    : initialData.source}
                 </span>
               </div>
 
