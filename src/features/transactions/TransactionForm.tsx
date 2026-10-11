@@ -8,7 +8,8 @@ import {
   Calendar,
   CreditCard,
   Building,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import {
   FinanceTransaction,
@@ -62,6 +63,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDetectionDetails, setShowDetectionDetails] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Filter categories by selected transaction type
@@ -406,6 +408,65 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               />
             </div>
           </div>
+
+          {/* Automated Detection Metadata (Step 16) */}
+          {isEditMode && initialData?.source && initialData.source !== "manual" && (
+            <div className="p-3.5 rounded-2xl bg-zinc-950/70 border border-zinc-800 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-zinc-300">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Detection Details</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-semibold uppercase">
+                  {initialData.source}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                <div>
+                  <span className="text-zinc-500 block">Detected Merchant:</span>
+                  <span className="font-semibold text-zinc-200">
+                    {initialData.merchantNormalized || initialData.merchant || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-500 block">Category Confidence:</span>
+                  <span className="font-semibold text-emerald-400">
+                    {initialData.categoryConfidence !== undefined
+                      ? `${Math.round(initialData.categoryConfidence * 100)}%`
+                      : "N/A"}
+                  </span>
+                </div>
+                {initialData.externalReference && (
+                  <div className="col-span-2">
+                    <span className="text-zinc-500 block">Reference:</span>
+                    <span className="font-mono text-zinc-300 text-[10px]">
+                      {initialData.externalReference.length > 8
+                        ? `${initialData.externalReference.slice(0, 3)}•••${initialData.externalReference.slice(-4)}`
+                        : initialData.externalReference}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {initialData.rawDescription && (
+                <div className="pt-1.5 border-t border-zinc-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowDetectionDetails(!showDetectionDetails)}
+                    className="text-[10px] text-zinc-400 hover:text-zinc-200 underline cursor-pointer"
+                  >
+                    {showDetectionDetails ? "Hide Raw Text" : "View Raw Source Text"}
+                  </button>
+                  {showDetectionDetails && (
+                    <p className="mt-1 p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 break-all leading-relaxed">
+                      {initialData.rawDescription}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions Button */}
           <div className="pt-2 flex items-center gap-3">

@@ -249,7 +249,10 @@ export function calculateBudgetProgressList(
 ): BudgetProgress[] {
   const monthBudgets = budgets.filter((b) => b.month === targetMonth);
   const monthExpenses = transactions.filter(
-    (t) => t.type === "expense" && isDateInMonth(t.timestamp, targetMonth)
+    (t) =>
+      t.type === "expense" &&
+      isDateInMonth(t.timestamp, targetMonth) &&
+      (t.reviewStatus === undefined || t.reviewStatus === "confirmed")
   );
 
   const spentByCatMap = new Map<string, number>();

@@ -9,6 +9,8 @@ import categoriesRouter from "./server/routes/categories";
 import analyticsRouter from "./server/routes/analytics";
 import budgetsRouter from "./server/routes/budgets";
 import insightsRouter from "./server/routes/insights";
+import ingestionRouter from "./server/routes/ingestion";
+import merchantRulesRouter from "./server/routes/merchantRules";
 import { getDatabase, saveDatabase } from "./server/db/database";
 
 dotenv.config();
@@ -260,6 +262,8 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/budgets", budgetsRouter);
 app.use("/api/insights", insightsRouter);
+app.use("/api/ingestion", ingestionRouter);
+app.use("/api/merchant-rules", merchantRulesRouter);
 
 // Existing Legacy APIs
 

@@ -66,6 +66,22 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                 </span>
               </>
             )}
+            {transaction.source && transaction.source !== "manual" && (
+              <>
+                <span className="text-zinc-600">•</span>
+                <span className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/20 text-[9px] font-semibold tracking-wider">
+                  {transaction.source === "import" ? "Import" : "Auto"}
+                </span>
+              </>
+            )}
+            {transaction.reviewStatus === "pending_review" && (
+              <>
+                <span className="text-zinc-600">•</span>
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold">
+                  Review
+                </span>
+              </>
+            )}
             {timeStr && (
               <>
                 <span className="text-zinc-600">•</span>

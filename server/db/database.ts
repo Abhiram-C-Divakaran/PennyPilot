@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { defaultSeedData, defaultCategories, defaultTransactions, defaultBudgets } from "./seed";
+import { defaultSeedData, defaultCategories, defaultTransactions, defaultBudgets, defaultMerchantRules } from "./seed";
 import { FinanceTransaction } from "../../src/types/transaction";
 import { TransactionCategory } from "../../src/types/category";
 import { Budget } from "../../src/types/budget";
+import { MerchantRule } from "../../src/types/merchant";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
@@ -15,6 +16,7 @@ export interface DatabaseSchema {
   transactions: FinanceTransaction[];
   categories: TransactionCategory[];
   budgets: Budget[];
+  merchantRules: MerchantRule[];
   notifications: any[];
   chatHistory: any[];
   challenges: any[];
@@ -74,11 +76,32 @@ function hydrateDatabase(data: any): { data: DatabaseSchema; updated: boolean } 
   if (!Array.isArray(data.transactions)) {
     data.transactions = defaultTransactions;
     updated = true;
+  } else {
+    data.transactions.forEach((tx: any) => {
+      if (!tx.source) {
+        tx.source = "manual";
+        updated = true;
+      }
+      if (!tx.reviewStatus) {
+        tx.reviewStatus = "confirmed";
+        updated = true;
+      }
+      if (tx.categoryConfidence === undefined) {
+        tx.categoryConfidence = 1;
+        updated = true;
+      }
+    });
   }
 
   // Budgets hydration (Phase 2)
   if (!Array.isArray(data.budgets)) {
     data.budgets = defaultBudgets;
+    updated = true;
+  }
+
+  // Merchant rules hydration (Phase 3)
+  if (!Array.isArray(data.merchantRules)) {
+    data.merchantRules = defaultMerchantRules;
     updated = true;
   }
 

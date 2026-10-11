@@ -18,16 +18,21 @@ import {
   getPreviousMonthKey
 } from "../utils/date";
 
+function isConfirmed(t: any): boolean {
+  return t.reviewStatus === undefined || t.reviewStatus === "confirmed";
+}
+
 /**
- * Calculates monthly analytics for a given month ("YYYY-MM").
- * If no month is supplied, defaults to current month.
+ * Pure calculation of monthly analytics given an array of transactions and target month.
  */
-export function getMonthlyAnalytics(monthParam?: string): MonthlyAnalytics {
-  const db = getDatabase();
+export function calculateMonthlyAnalytics(
+  transactions: any[],
+  monthParam?: string
+): MonthlyAnalytics {
   const currentMonth = monthParam?.trim() || getCurrentMonthKey();
 
-  const monthTxs = (db.transactions || []).filter(
-    (t) => isDateInMonth(t.timestamp, currentMonth)
+  const monthTxs = transactions.filter(
+    (t) => isDateInMonth(t.timestamp, currentMonth) && isConfirmed(t)
   );
 
   let income = 0;
@@ -54,6 +59,15 @@ export function getMonthlyAnalytics(monthParam?: string): MonthlyAnalytics {
 }
 
 /**
+ * Calculates monthly analytics for a given month ("YYYY-MM").
+ * If no month is supplied, defaults to current month.
+ */
+export function getMonthlyAnalytics(monthParam?: string): MonthlyAnalytics {
+  const db = getDatabase();
+  return calculateMonthlyAnalytics(db.transactions || [], monthParam);
+}
+
+/**
  * Groups monthly expense transactions by category.
  */
 export function getCategorySpendingAnalytics(monthParam?: string): CategorySpendingItem[] {
@@ -61,7 +75,7 @@ export function getCategorySpendingAnalytics(monthParam?: string): CategorySpend
   const currentMonth = monthParam?.trim() || getCurrentMonthKey();
 
   const monthExpenses = (db.transactions || []).filter(
-    (t) => t.type === "expense" && isDateInMonth(t.timestamp, currentMonth)
+    (t) => t.type === "expense" && isDateInMonth(t.timestamp, currentMonth) && isConfirmed(t)
   );
 
   const spendingMap = new Map<string, { amount: number; count: number }>();
@@ -149,10 +163,10 @@ export function calculateCategorySpendingTrends(
   const expenseCategories = categories.filter((c) => c.type === "expense");
 
   const currentMonthExpenses = transactions.filter(
-    (t) => t.type === "expense" && isDateInMonth(t.timestamp, currentMonth)
+    (t) => t.type === "expense" && isDateInMonth(t.timestamp, currentMonth) && isConfirmed(t)
   );
   const prevMonthExpenses = transactions.filter(
-    (t) => t.type === "expense" && isDateInMonth(t.timestamp, previousMonth)
+    (t) => t.type === "expense" && isDateInMonth(t.timestamp, previousMonth) && isConfirmed(t)
   );
 
   const curSpentMap = new Map<string, number>();

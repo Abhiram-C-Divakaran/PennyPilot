@@ -134,8 +134,10 @@ export function createTransaction(input: CreateTransactionInput): FinanceTransac
     description: input.description?.trim() || undefined,
     timestamp: input.timestamp ? new Date(input.timestamp).toISOString() : now,
     paymentMethod: input.paymentMethod || undefined,
-    source: "manual",
-    externalReference: undefined,
+    source: input.source || "manual",
+    reviewStatus: "confirmed",
+    categoryConfidence: 1,
+    externalReference: input.externalReference || undefined,
     createdAt: now,
     updatedAt: now
   };
@@ -175,6 +177,7 @@ export function updateTransaction(
     description: input.description !== undefined ? (input.description.trim() || undefined) : existing.description,
     timestamp: input.timestamp ? new Date(input.timestamp).toISOString() : existing.timestamp,
     paymentMethod: input.paymentMethod !== undefined ? input.paymentMethod : existing.paymentMethod,
+    reviewStatus: input.reviewStatus ?? existing.reviewStatus,
     updatedAt: now
   };
 
@@ -195,4 +198,88 @@ export function deleteTransaction(id: string): boolean {
   saveDatabase(db);
 
   return true;
+}
+
+export function getTransactionsForReview(): FinanceTransaction[] {
+  const db = getDatabase();
+  return (db.transactions || [])
+    .filter((t) => t.reviewStatus === "pending_review")
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+export function confirmTransaction(
+  id: string,
+  updates?: {
+    categoryId?: string;
+    merchant?: string;
+    paymentMethod?: any;
+    type?: any;
+    learnMerchantRule?: boolean;
+  }
+): FinanceTransaction {
+  const db = getDatabase();
+  const index = db.transactions.findIndex((t) => t.id === id);
+  if (index === -1) {
+    throw new Error(`Transaction '${id}' not found`);
+  }
+
+  const existing = db.transactions[index];
+  const now = new Date().toISOString();
+
+  const finalCategoryId = updates?.categoryId || existing.categoryId;
+  const finalMerchant = updates?.merchant !== undefined ? updates.merchant.trim() : existing.merchant;
+  const finalPaymentMethod = updates?.paymentMethod || existing.paymentMethod;
+  const finalType = updates?.type || existing.type;
+
+  const confirmedTx: FinanceTransaction = {
+    ...existing,
+    categoryId: finalCategoryId,
+    merchant: finalMerchant || undefined,
+    paymentMethod: finalPaymentMethod,
+    type: finalType,
+    reviewStatus: "confirmed",
+    categoryConfidence: 1,
+    updatedAt: now
+  };
+
+  db.transactions[index] = confirmedTx;
+  saveDatabase(db);
+
+  // If user requested to learn this rule or corrected the category for a merchant
+  if (updates?.learnMerchantRule && finalMerchant && finalCategoryId) {
+    try {
+      const { addOrUpdateMerchantRule } = require("./categorizationService");
+      addOrUpdateMerchantRule({
+        merchant: finalMerchant,
+        categoryId: finalCategoryId,
+        paymentMethod: finalPaymentMethod
+      });
+    } catch (err) {
+      console.error("Failed to learn merchant rule on confirmation:", err);
+    }
+  }
+
+  return confirmedTx;
+}
+
+export function rejectTransaction(id: string): FinanceTransaction {
+  const db = getDatabase();
+  const index = db.transactions.findIndex((t) => t.id === id);
+  if (index === -1) {
+    throw new Error(`Transaction '${id}' not found`);
+  }
+
+  const existing = db.transactions[index];
+  const now = new Date().toISOString();
+
+  const rejectedTx: FinanceTransaction = {
+    ...existing,
+    reviewStatus: "rejected",
+    updatedAt: now
+  };
+
+  db.transactions[index] = rejectedTx;
+  saveDatabase(db);
+
+  return rejectedTx;
 }

@@ -34,7 +34,11 @@ export async function apiClient<T>(
     try {
       errorData = await response.json();
       if (errorData && errorData.error) {
-        errorMessage = errorData.error;
+        if (typeof errorData.error === "string") {
+          errorMessage = errorData.error;
+        } else if (typeof errorData.error === "object" && errorData.error.message) {
+          errorMessage = errorData.error.message;
+        }
       }
     } catch {
       // Body not JSON

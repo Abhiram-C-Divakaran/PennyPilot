@@ -10,10 +10,15 @@ import { InsightsScreen } from "./features/insights/InsightsScreen";
 import { GoalsView } from "./features/goals/GoalsView";
 import {
   getTransactions,
+  getReviewTransactions,
+  confirmTransaction,
+  rejectTransaction,
   createTransaction,
   updateTransaction,
   deleteTransaction
 } from "./api/transactions";
+import { CSVImportModal } from "./features/import/CSVImportModal";
+import { IngestionSimulatorModal } from "./features/simulator/IngestionSimulatorModal";
 import { getCategories } from "./api/categories";
 import {
   getMonthlyAnalytics,
@@ -62,6 +67,7 @@ export default function App() {
 
   // Finance Tracker State
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [reviewTransactions, setReviewTransactions] = useState<FinanceTransaction[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [monthlyAnalytics, setMonthlyAnalytics] = useState<MonthlyAnalytics>({
     month: getCurrentMonthKey(),
@@ -71,6 +77,10 @@ export default function App() {
     savingsRate: 0
   });
   const [categorySpending, setCategorySpending] = useState<CategorySpendingItem[]>([]);
+
+  // Phase 3: Modal States
+  const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
 
   // Phase 2: Budgets State
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -130,14 +140,16 @@ export default function App() {
   // Sync Finance Data for Selected Month
   const syncFinanceData = useCallback(async (month: string) => {
     try {
-      const [txs, cats, analytics, spending] = await Promise.all([
+      const [txs, revTxs, cats, analytics, spending] = await Promise.all([
         getTransactions(),
+        getReviewTransactions(),
         getCategories(),
         getMonthlyAnalytics(month),
         getCategorySpending(month)
       ]);
 
       setTransactions(txs);
+      setReviewTransactions(revTxs);
       setCategories(cats);
       setMonthlyAnalytics(analytics);
       setCategorySpending(spending);
@@ -282,6 +294,42 @@ export default function App() {
       ]);
     } catch (err: any) {
       showToast(err?.message || "Failed to delete transaction", "error");
+    }
+  };
+
+  // Phase 3: Review Inbox Handlers
+  const handleConfirmReview = async (
+    id: string,
+    updates: {
+      categoryId?: string;
+      merchant?: string;
+      learnMerchantRule?: boolean;
+    }
+  ) => {
+    try {
+      await confirmTransaction(id, updates);
+      showToast("Transaction confirmed and categorized", "success");
+      await Promise.all([
+        syncFinanceData(selectedMonth),
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to confirm transaction", "error");
+    }
+  };
+
+  const handleRejectReview = async (id: string) => {
+    try {
+      await rejectTransaction(id);
+      showToast("Transaction rejected", "success");
+      await Promise.all([
+        syncFinanceData(selectedMonth),
+        syncBudgetData(selectedMonth),
+        syncInsightsData(selectedMonth)
+      ]);
+    } catch (err: any) {
+      showToast(err?.message || "Failed to reject transaction", "error");
     }
   };
 
@@ -537,9 +585,14 @@ export default function App() {
               {activeTab === "transactions" && (
                 <TransactionList
                   transactions={transactions}
+                  reviewTransactions={reviewTransactions}
                   categories={categories}
                   onSelectTransaction={handleOpenEditTransaction}
                   onAddTransaction={handleOpenAddTransaction}
+                  onConfirmReview={handleConfirmReview}
+                  onRejectReview={handleRejectReview}
+                  onOpenCSVImport={() => setIsCSVImportOpen(true)}
+                  onOpenSimulator={() => setIsSimulatorOpen(true)}
                 />
               )}
 
@@ -622,6 +675,32 @@ export default function App() {
           categories={categories}
           onSubmit={handleSaveTransaction}
           onDelete={selectedTransaction ? handleDeleteTransaction : undefined}
+        />
+
+        {/* Phase 3: CSV Import Modal */}
+        <CSVImportModal
+          isOpen={isCSVImportOpen}
+          onClose={() => setIsCSVImportOpen(false)}
+          onImportComplete={async () => {
+            await Promise.all([
+              syncFinanceData(selectedMonth),
+              syncBudgetData(selectedMonth),
+              syncInsightsData(selectedMonth)
+            ]);
+          }}
+        />
+
+        {/* Phase 3: Ingestion Simulator Modal */}
+        <IngestionSimulatorModal
+          isOpen={isSimulatorOpen}
+          onClose={() => setIsSimulatorOpen(false)}
+          onTransactionIngested={async () => {
+            await Promise.all([
+              syncFinanceData(selectedMonth),
+              syncBudgetData(selectedMonth),
+              syncInsightsData(selectedMonth)
+            ]);
+          }}
         />
       </div>
     </div>

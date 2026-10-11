@@ -1,6 +1,7 @@
 import { TransactionCategory } from "../../src/types/category";
 import { FinanceTransaction } from "../../src/types/transaction";
 import { Budget } from "../../src/types/budget";
+import { MerchantRule } from "../../src/types/merchant";
 
 export const defaultCategories: TransactionCategory[] = [
   // Expense Categories
@@ -133,6 +134,26 @@ export const defaultBudgets: Budget[] = [
   }
 ];
 
+export const defaultMerchantRules: MerchantRule[] = [
+  { id: "rule-zomato", pattern: "zomato", normalizedMerchant: "zomato", categoryId: "food", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-swiggy", pattern: "swiggy", normalizedMerchant: "swiggy", categoryId: "food", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-uber", pattern: "uber", normalizedMerchant: "uber", categoryId: "transport", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-ola", pattern: "ola", normalizedMerchant: "ola", categoryId: "transport", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-rapido", pattern: "rapido", normalizedMerchant: "rapido", categoryId: "transport", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-amazon", pattern: "amazon", normalizedMerchant: "amazon", categoryId: "shopping", paymentMethod: "credit_card", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-flipkart", pattern: "flipkart", normalizedMerchant: "flipkart", categoryId: "shopping", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-netflix", pattern: "netflix", normalizedMerchant: "netflix", categoryId: "subscriptions", paymentMethod: "credit_card", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-spotify", pattern: "spotify", normalizedMerchant: "spotify", categoryId: "subscriptions", paymentMethod: "credit_card", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-airtel", pattern: "airtel", normalizedMerchant: "airtel", categoryId: "bills", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-jio", pattern: "jio", normalizedMerchant: "jio", categoryId: "bills", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-indianoil", pattern: "indian oil", normalizedMerchant: "indian oil", categoryId: "fuel", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-hpcl", pattern: "hpcl", normalizedMerchant: "hpcl", categoryId: "fuel", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-zepto", pattern: "zepto", normalizedMerchant: "zepto", categoryId: "groceries", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-blinkit", pattern: "blinkit", normalizedMerchant: "blinkit", categoryId: "groceries", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-instamart", pattern: "instamart", normalizedMerchant: "instamart", categoryId: "groceries", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() },
+  { id: "rule-bigbasket", pattern: "bigbasket", normalizedMerchant: "bigbasket", categoryId: "groceries", paymentMethod: "upi", priority: 10, userDefined: false, createdAt: new Date().toISOString() }
+];
+
 export const defaultSeedData = {
   profile: {
     name: "Demo User",
@@ -161,6 +182,7 @@ export const defaultSeedData = {
   categories: defaultCategories,
   transactions: defaultTransactions,
   budgets: defaultBudgets,
+  merchantRules: defaultMerchantRules,
   goals: [
     {
       id: "goal-1",

@@ -5,11 +5,29 @@ import {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  getTransactionsForReview,
+  confirmTransaction,
+  rejectTransaction,
   TransactionValidationError,
   TransactionFilterParams
 } from "../services/transactionService";
 
 const router = Router();
+
+// GET /api/transactions/review - returns all transactions pending review
+router.get("/review", (req: Request, res: Response) => {
+  try {
+    const list = getTransactionsForReview();
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({
+      error: {
+        code: "FAILED_FETCH_REVIEW",
+        message: err.message || "Failed to fetch review transactions"
+      }
+    });
+  }
+});
 
 // GET /api/transactions - returns all transactions sorted newest first, with optional filters
 router.get("/", (req: Request, res: Response) => {
@@ -41,6 +59,42 @@ router.get("/:id", (req: Request, res: Response) => {
     res.json(transaction);
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to fetch transaction" });
+  }
+});
+
+// POST /api/transactions/:id/confirm - confirm a pending review transaction
+router.post("/:id/confirm", (req: Request, res: Response) => {
+  try {
+    const confirmed = confirmTransaction(req.params.id, req.body);
+    res.json({
+      success: true,
+      transaction: confirmed
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      error: {
+        code: "CONFIRMATION_FAILED",
+        message: err.message || "Failed to confirm transaction"
+      }
+    });
+  }
+});
+
+// POST /api/transactions/:id/reject - reject a pending review transaction
+router.post("/:id/reject", (req: Request, res: Response) => {
+  try {
+    const rejected = rejectTransaction(req.params.id);
+    res.json({
+      success: true,
+      transaction: rejected
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      error: {
+        code: "REJECTION_FAILED",
+        message: err.message || "Failed to reject transaction"
+      }
+    });
   }
 });
 

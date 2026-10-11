@@ -166,6 +166,7 @@ export interface AppState {
   transactions: import("./types/transaction").FinanceTransaction[];
   categories: import("./types/category").TransactionCategory[];
   budgets: import("./types/budget").Budget[];
+  merchantRules: import("./types/merchant").MerchantRule[];
 }
 
 export * from "./types/transaction";
@@ -173,4 +174,6 @@ export * from "./types/category";
 export * from "./types/analytics";
 export * from "./types/budget";
 export * from "./types/insight";
+export * from "./types/merchant";
+export * from "./types/ingestion";
 

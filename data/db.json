@@ -180,7 +180,9 @@
       "paymentMethod": "bank_transfer",
       "source": "manual",
       "createdAt": "2026-10-07T22:44:32.678Z",
-      "updatedAt": "2026-10-07T22:44:32.678Z"
+      "updatedAt": "2026-10-07T22:44:32.678Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     },
     {
       "id": "tx-init-1",
@@ -193,7 +195,9 @@
       "paymentMethod": "bank_transfer",
       "source": "manual",
       "createdAt": "2026-10-02T22:20:43.912Z",
-      "updatedAt": "2026-10-02T22:20:43.912Z"
+      "updatedAt": "2026-10-02T22:20:43.912Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     },
     {
       "id": "tx-init-2",
@@ -206,7 +210,9 @@
       "paymentMethod": "debit_card",
       "source": "manual",
       "createdAt": "2026-10-04T22:20:43.912Z",
-      "updatedAt": "2026-10-04T22:20:43.912Z"
+      "updatedAt": "2026-10-04T22:20:43.912Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     },
     {
       "id": "tx-init-3",
@@ -219,7 +225,9 @@
       "paymentMethod": "credit_card",
       "source": "manual",
       "createdAt": "2026-10-05T22:20:43.912Z",
-      "updatedAt": "2026-10-05T22:20:43.912Z"
+      "updatedAt": "2026-10-05T22:20:43.912Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     },
     {
       "id": "tx-init-4",
@@ -232,7 +240,9 @@
       "paymentMethod": "upi",
       "source": "manual",
       "createdAt": "2026-10-06T22:20:43.912Z",
-      "updatedAt": "2026-10-06T22:20:43.912Z"
+      "updatedAt": "2026-10-06T22:20:43.912Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     },
     {
       "id": "tx-init-5",
@@ -245,7 +255,9 @@
       "paymentMethod": "upi",
       "source": "manual",
       "createdAt": "2026-10-07T22:20:43.912Z",
-      "updatedAt": "2026-10-07T22:20:43.912Z"
+      "updatedAt": "2026-10-07T22:20:43.912Z",
+      "reviewStatus": "confirmed",
+      "categoryConfidence": 1
     }
   ],
   "goals": [
@@ -357,6 +369,189 @@
       "limit": 2000,
       "createdAt": "2026-10-10T14:55:21.657Z",
       "updatedAt": "2026-10-10T14:55:21.657Z"
+    }
+  ],
+  "merchantRules": [
+    {
+      "id": "rule-usr-abc-traders-1791694010242",
+      "pattern": "abc traders",
+      "normalizedMerchant": "abc traders",
+      "categoryId": "groceries",
+      "priority": 100,
+      "userDefined": true,
+      "createdAt": "2026-10-11T04:46:50.242Z",
+      "updatedAt": "2026-10-11T04:49:19.293Z"
+    },
+    {
+      "id": "rule-zomato",
+      "pattern": "zomato",
+      "normalizedMerchant": "zomato",
+      "categoryId": "food",
+      "paymentMethod": "upi",
+      "priority": 100,
+      "userDefined": true,
+      "createdAt": "2026-10-11T04:46:49.841Z",
+      "updatedAt": "2026-10-11T04:49:19.297Z"
+    },
+    {
+      "id": "rule-swiggy",
+      "pattern": "swiggy",
+      "normalizedMerchant": "swiggy",
+      "categoryId": "food",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-uber",
+      "pattern": "uber",
+      "normalizedMerchant": "uber",
+      "categoryId": "transport",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-ola",
+      "pattern": "ola",
+      "normalizedMerchant": "ola",
+      "categoryId": "transport",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-rapido",
+      "pattern": "rapido",
+      "normalizedMerchant": "rapido",
+      "categoryId": "transport",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-amazon",
+      "pattern": "amazon",
+      "normalizedMerchant": "amazon",
+      "categoryId": "shopping",
+      "paymentMethod": "credit_card",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-flipkart",
+      "pattern": "flipkart",
+      "normalizedMerchant": "flipkart",
+      "categoryId": "shopping",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-netflix",
+      "pattern": "netflix",
+      "normalizedMerchant": "netflix",
+      "categoryId": "subscriptions",
+      "paymentMethod": "credit_card",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-spotify",
+      "pattern": "spotify",
+      "normalizedMerchant": "spotify",
+      "categoryId": "subscriptions",
+      "paymentMethod": "credit_card",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-airtel",
+      "pattern": "airtel",
+      "normalizedMerchant": "airtel",
+      "categoryId": "bills",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-jio",
+      "pattern": "jio",
+      "normalizedMerchant": "jio",
+      "categoryId": "bills",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-indianoil",
+      "pattern": "indian oil",
+      "normalizedMerchant": "indian oil",
+      "categoryId": "fuel",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.841Z"
+    },
+    {
+      "id": "rule-hpcl",
+      "pattern": "hpcl",
+      "normalizedMerchant": "hpcl",
+      "categoryId": "fuel",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.842Z"
+    },
+    {
+      "id": "rule-zepto",
+      "pattern": "zepto",
+      "normalizedMerchant": "zepto",
+      "categoryId": "groceries",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.842Z"
+    },
+    {
+      "id": "rule-blinkit",
+      "pattern": "blinkit",
+      "normalizedMerchant": "blinkit",
+      "categoryId": "groceries",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.842Z"
+    },
+    {
+      "id": "rule-instamart",
+      "pattern": "instamart",
+      "normalizedMerchant": "instamart",
+      "categoryId": "groceries",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.842Z"
+    },
+    {
+      "id": "rule-bigbasket",
+      "pattern": "bigbasket",
+      "normalizedMerchant": "bigbasket",
+      "categoryId": "groceries",
+      "paymentMethod": "upi",
+      "priority": 10,
+      "userDefined": false,
+      "createdAt": "2026-10-11T04:46:49.842Z"
     }
   ]
 }

@@ -1,25 +1,44 @@
 import React, { useState, useMemo } from "react";
-import { Search, X, Filter } from "lucide-react";
+import { Search, X, Filter, FileSpreadsheet, Smartphone, ShieldAlert } from "lucide-react";
 import { FinanceTransaction, FinanceTransactionType } from "../../types/transaction";
 import { TransactionCategory } from "../../types/category";
 import { groupTransactionsByDate } from "../../utils/date";
 import { formatCurrency } from "../../utils/currency";
 import { TransactionItem } from "./TransactionItem";
 import { EmptyState } from "../../components/EmptyState";
+import { ReviewInbox } from "../review/ReviewInbox";
 
 interface TransactionListProps {
   transactions: FinanceTransaction[];
+  reviewTransactions?: FinanceTransaction[];
   categories: TransactionCategory[];
   onSelectTransaction: (transaction: FinanceTransaction) => void;
   onAddTransaction: () => void;
+  onConfirmReview?: (
+    id: string,
+    updates: {
+      categoryId?: string;
+      merchant?: string;
+      learnMerchantRule?: boolean;
+    }
+  ) => Promise<void>;
+  onRejectReview?: (id: string) => Promise<void>;
+  onOpenCSVImport?: () => void;
+  onOpenSimulator?: () => void;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
+  reviewTransactions = [],
   categories,
   onSelectTransaction,
-  onAddTransaction
+  onAddTransaction,
+  onConfirmReview,
+  onRejectReview,
+  onOpenCSVImport,
+  onOpenSimulator
 }) => {
+  const [subView, setSubView] = useState<"history" | "review">("history");
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | FinanceTransactionType>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -90,8 +109,108 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     setSelectedPaymentMethod("all");
   };
 
+  if (subView === "review") {
+    return (
+      <ReviewInbox
+        transactions={reviewTransactions}
+        categories={categories}
+        onConfirm={async (id, updates) => {
+          if (onConfirmReview) await onConfirmReview(id, updates);
+        }}
+        onReject={async (id) => {
+          if (onRejectReview) await onRejectReview(id);
+        }}
+        onSelectTransaction={onSelectTransaction}
+        onBack={() => setSubView("history")}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4 pb-24">
+      {/* Top Toolbar: Quick Ingestion Tools & Subview switcher */}
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setSubView("history")}
+            className="py-1 px-2.5 rounded-lg bg-zinc-800 text-zinc-100 shadow-sm cursor-pointer"
+          >
+            History
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubView("review")}
+            className={`py-1 px-2.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+              reviewTransactions.length > 0
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <span>Needs Review</span>
+            {reviewTransactions.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 font-extrabold text-[10px]">
+                {reviewTransactions.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          {onOpenCSVImport && (
+            <button
+              type="button"
+              onClick={onOpenCSVImport}
+              className="py-1.5 px-2.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-zinc-100 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Import bank statement CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Import CSV</span>
+              <span className="sm:hidden">CSV</span>
+            </button>
+          )}
+
+          {onOpenSimulator && (
+            <button
+              type="button"
+              onClick={onOpenSimulator}
+              className="py-1.5 px-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Simulate notification / SMS ingestion"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-purple-400" />
+              <span className="hidden sm:inline">Simulate</span>
+              <span className="sm:hidden">Sim</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Review Alert Banner (when in history view and there are pending items) */}
+      {reviewTransactions.length > 0 && (
+        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-amber-200 truncate">
+                {reviewTransactions.length} automated transaction{reviewTransactions.length > 1 ? "s" : ""} pending review
+              </h4>
+              <p className="text-[10px] text-zinc-400 truncate">
+                Confirm categories to keep budget and analytics accurate.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSubView("review")}
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors shrink-0 cursor-pointer"
+          >
+            Review Now
+          </button>
+        </div>
+      )}
+
       {/* Search & Filter Header */}
       <div className="space-y-3">
         {/* Search Bar */}

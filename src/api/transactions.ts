@@ -62,3 +62,38 @@ export async function deleteTransaction(
     method: "DELETE"
   });
 }
+
+export async function getReviewTransactions(): Promise<FinanceTransaction[]> {
+  return apiClient<FinanceTransaction[]>("/api/transactions/review");
+}
+
+export async function confirmTransaction(
+  id: string,
+  updates?: {
+    categoryId?: string;
+    merchant?: string;
+    paymentMethod?: any;
+    type?: any;
+    learnMerchantRule?: boolean;
+  }
+): Promise<{ success: boolean; transaction: FinanceTransaction }> {
+  return apiClient<{ success: boolean; transaction: FinanceTransaction }>(
+    `/api/transactions/${id}/confirm`,
+    {
+      method: "POST",
+      body: JSON.stringify(updates || {})
+    }
+  );
+}
+
+export async function rejectTransaction(
+  id: string
+): Promise<{ success: boolean; transaction: FinanceTransaction }> {
+  return apiClient<{ success: boolean; transaction: FinanceTransaction }>(
+    `/api/transactions/${id}/reject`,
+    {
+      method: "POST"
+    }
+  );
+}
+
